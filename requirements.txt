@@ -1,0 +1,10 @@
+numpy
+flask
+Pillow-SIMD
+#Pillow
+ultralytics
+git+https://github.com/ultralytics/CLIP.git
+torch
+dill
+waitress
+nob

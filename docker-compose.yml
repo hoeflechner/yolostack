@@ -1,0 +1,19 @@
+version: "3.4"
+
+services:
+  yolo:
+    image: yolostack
+    container_name: yolostack
+    restart: unless-stopped
+    ports:
+      - "8040:8040"
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
