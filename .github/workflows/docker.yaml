@@ -22,5 +22,8 @@ jobs:
         name: Build and push
         uses: docker/build-push-action@v5
         with:
-          push: true
-          tags: hoeflechner/yolostack:latest
+          context: .
+          platforms: linux/amd64,linux/arm64
+          tags: user/app:latest
+          secrets: |
+            "github_token=${{ secrets.GITHUB_TOKEN }}" 
