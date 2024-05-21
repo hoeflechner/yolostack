@@ -43,7 +43,7 @@ except Exception as e:
 def predict():
     file = request.files['image']
     image=Image.open(file)
-    results = model.predict(image, save=False, conf=0.4, half=True, )
+    results = model.predict(image, save=False, conf=0.25, half=True, )
     #results[0].save("debug.jpg")
     
     predictions=[]
