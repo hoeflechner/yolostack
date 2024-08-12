@@ -5,13 +5,16 @@ from PIL import Image
 import time
 import threading
 import os.path
-from ultralytics import YOLOWorld
+from ultralytics import YOLOWorld, YOLO
 import torch
 import yaml
 from nob import Nob
 
 app = Flask(__name__)
-model = YOLOWorld('yolov8x-world.pt')
+model = YOLOWorld('yolov8x-worldv2.pt')
+
+#model.export(format="openvino") 
+#model=YOLOWorld("yolov8x-world_openvino_model/")
 
 device='cpu'
 
