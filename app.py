@@ -57,7 +57,7 @@ except Exception as e:
 def predict():
     file = request.files['image']
     image=Image.open(file)
-    results = model.predict(image, save=False, conf=0.25, half=half)
+    results = model.predict(image, save=False, conf=0.25, half=half, device=device)
 
     #results[0].save("debug.jpg")
     
