@@ -15,7 +15,7 @@ FORMAT = os.getenv("FORMAT","ultralytics")
 half=True
 
 app = Flask(__name__)
-model = YOLOWorld('.pt')
+model = YOLOWorld(f'{MODELNAME}.pt')
 
 device='cpu'
 
