@@ -19,6 +19,11 @@ services:
     volumes:
       # mount frigates config file here!
       - ./config/config.yaml:/workspace/config.yaml:ro
+    environment:
+      # currently onnx, openvino and ultralytics is supported
+      - FORMAT=ultralytics
+      # choose a model from https://docs.ultralytics.com/models/yolo-world/
+      - MODELNAME=yolov8x-worldv2
     deploy:
       resources:
         reservations:
