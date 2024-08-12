@@ -7,6 +7,9 @@ services:
     restart: unless-stopped
     ports:
       - "8040:8040"
+    environment:
+      - FORMAT=ultralytics
+      - MODELNAME=yolov8x-worldv2
     build:
       context: .
       dockerfile: ./Dockerfile

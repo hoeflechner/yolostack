@@ -1,2 +1,4 @@
 *.pt
 **/__pycache__/**
+*_openvino_model/
+*.onnx

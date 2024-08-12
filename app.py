@@ -4,17 +4,18 @@ import io
 from PIL import Image
 import time
 import threading
-import os.path
+import os
 from ultralytics import YOLOWorld, YOLO
 import torch
 import yaml
 from nob import Nob
 
-app = Flask(__name__)
-model = YOLOWorld('yolov8x-worldv2.pt')
+MODELNAME = os.getenv("MODELNAME","yolov8x-worldv2")
+FORMAT = os.getenv("FORMAT","ultralytics")
+half=True
 
-#model.export(format="openvino") 
-#model=YOLOWorld("yolov8x-world_openvino_model/")
+app = Flask(__name__)
+model = YOLOWorld('.pt')
 
 device='cpu'
 
@@ -29,7 +30,17 @@ with open("config.yaml", 'r') as stream:
         labels.add(i.val)
     print(f"labels: {labels}")
 model.set_classes(list(labels))
-    
+
+if (FORMAT=="onnx"):
+    model.export(format="onnx") 
+    model=YOLO(f"{MODELNAME}.onnx")
+    half=False
+
+if(FORMAT=="openvino"):
+    model.export(format="openvino")
+    model=YOLO(f"{MODELNAME}_openvino_model/")
+    half=False
+
 try:
     devcount=torch.cuda.device_count()
     if devcount>0:   
@@ -46,7 +57,8 @@ except Exception as e:
 def predict():
     file = request.files['image']
     image=Image.open(file)
-    results = model.predict(image, save=False, conf=0.25, half=True, )
+    results = model.predict(image, save=False, conf=0.25, half=half)
+
     #results[0].save("debug.jpg")
     
     predictions=[]
