@@ -24,7 +24,7 @@ with open("config.yaml", 'r') as stream:
         d+=nobTree[track]
     for i in d:
         labels.add(i.val)
-
+    print(f"labels: {labels}")
 model.set_classes(list(labels))
     
 try:
