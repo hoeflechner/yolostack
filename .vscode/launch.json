@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "Python Debugger: Python File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}"
+        },
+        {
+            "name": "App",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "src/app.py",
+            "env": {
+                "FORMAT": "ultralytics",
+                "DEVICE": "cuda"
+            }
+        }
+    ]
+}

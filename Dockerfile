@@ -11,7 +11,7 @@ RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install libgl1-mesa-glx li
 RUN python -m pip install --upgrade pip
 
 COPY requirements.txt requirements.txt
-COPY app.py app.py 
+COPY src/app.py app.py 
 COPY config.yaml config.yaml
 
 RUN python -m pip install -r requirements.txt

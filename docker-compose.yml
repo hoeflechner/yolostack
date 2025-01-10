@@ -9,7 +9,9 @@ services:
       - "8040:8040"
     environment:
       - FORMAT=ultralytics
+      - HALF=True
       - MODELNAME=yolov8x-worldv2
+      - DEVICE=cuda
     build:
       context: .
       dockerfile: ./Dockerfile

@@ -1,6 +1,6 @@
 # YoloStack
 
-YoloStack is a minimal replacement for the DeepStack AI Server (which seems not do be developed anymore :( ).
+YoloStack is a minimal replacement for the [DeepStack AI Server](https://github.com/johnolafenwa/DeepStack) (which seems not do be developed anymore :( ).
 
 It is limited to the ```predict```-endpoint only. It is tailored for use with [Frigate](https://frigate.video/). It for now only uses the [YOLOv8x-worldv2](https://docs.ultralytics.com/models/yolo-world/#available-models-supported-tasks-and-operating-modes) model.
 

@@ -9,3 +9,5 @@ dill
 waitress
 nob
 onnxruntime-gpu
+openvino
+pytest
