@@ -1,6 +1,6 @@
 numpy
 flask
-Pillow-SIMD
+#Pillow-SIMD
 #Pillow
 ultralytics
 git+https://github.com/ultralytics/CLIP.git

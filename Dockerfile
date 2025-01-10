@@ -15,5 +15,6 @@ COPY src/app.py app.py
 COPY config.yaml config.yaml
 
 RUN python -m pip install -r requirements.txt
+RUN python -m pip install Pillow-SIMD
 
 CMD ["python","app.py"]
