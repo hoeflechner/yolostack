@@ -92,7 +92,7 @@ python app.py
 in another terminal test the endpoint:
 
 ```
-python test.py
+python demo.py
 ```
 
 it should return a json string with the predictions it found in the image.

@@ -9,7 +9,8 @@ services:
       - "8040:8040"
     environment:
       - FORMAT=ultralytics
-      - HALF=False
+      - HALF=True
+      - WORLD=True
       - MODELNAME=yolov8x-worldv2
       - DEVICE=cuda
     build:

@@ -2,3 +2,4 @@
 **/__pycache__/**
 *_openvino_model/
 *.onnx
+*.engine

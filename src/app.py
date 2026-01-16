@@ -4,58 +4,87 @@ import os
 from ultralytics import YOLOWorld, YOLO
 import torch
 import yaml
+import sys
 from nob import Nob
 
 MODELNAME = os.getenv("MODELNAME","yolov8x-worldv2")
 FORMAT = os.getenv("FORMAT","ultralytics")
 DEVICE = os.getenv("DEVICE","cpu")
-HALF = os.getenv("HALF","False")
+HALF = os.getenv("HALF","True")
+WORLD = os.getenv("WORLD","True")
+
+def check_cuda():
+    print(f"Python Version: {sys.version}")
+    print(f"PyTorch Version: {torch.__version__}")
+    print(f"CUDA avaliable: {torch.cuda.is_available()}")
+    
+    if torch.cuda.is_available():
+        print(f"GPU Name: {torch.cuda.get_device_name(0)}")
+        print(f"CUDA Version (PyTorch): {torch.version.cuda}")
+        x = torch.rand(5, 3).cuda()
+        print("Tensor-operation on GPU successful.")
+        return True
+    else:
+        return False
+try:    
+    if check_cuda() and DEVICE!="cpu": 
+        device=DEVICE 
+        #print(torch.cuda.get_device_properties(0).major, torch.cuda.get_device_properties(0).minor) 
+        freemem = torch.cuda.mem_get_info()[0]
+        devicename=torch.cuda.get_device_name(device)
+        print(f"starting on {devicename}, {freemem/1024/1024:.0f} MB left")
+    else:
+        device="cpu"
+        print(f"starting on CPU")
+except Exception as e:
+    device='cpu'
+    print(e)
 
 app = Flask(__name__)
-model = YOLOWorld(f'{MODELNAME}.pt')
-
-device='cpu'
+if WORLD=="True" or WORLD=="true" or WORLD=="1" or WORLD=="yes":
+    model = YOLOWorld(f'{MODELNAME}.pt')
+    model.to(device)
+else:
+    model = YOLO(f'{MODELNAME}.pt')
+    model.to(device)
 
 if HALF=="True" or HALF=="true" or HALF=="1" or HALF=="yes":
     half=True
 else:
     half=False
 
-labels=set([])
-with open("config.yaml", 'r') as stream:
-    data_loaded = yaml.safe_load(stream)
-    nobTree=Nob(data_loaded)
-    d=[]
-    for track in nobTree.find("track"):
-        d+=nobTree[track]
-    for i in d:
-        labels.add(i.val)
-    print(f"labels: {labels}")
-model.set_classes(list(labels))
+if WORLD=="True" or WORLD=="true" or WORLD=="1" or WORLD=="yes":
+    labels=set([])
+    with open("config.yaml", 'r') as stream:
+        data_loaded = yaml.safe_load(stream)
+        nobTree=Nob(data_loaded)
+        d=[]
+        for track in nobTree.find("track"):
+            d+=nobTree[track]
+        for i in d:
+            labels.add(i.val)
+        print(f"labels: {labels}")
+    model.set_classes(list(labels))
+
+if FORMAT == "engine":
+    model.to(device)
+    export_path = model.export(
+        format="engine", 
+        device=device, 
+        half=half,       
+        simplify=True, 
+        workspace=4 
+    )
+    model = YOLO(export_path)
 
 if (FORMAT=="onnx"):
+    model.to(device)
     model.export(format="onnx") 
     model=YOLO(f"{MODELNAME}.onnx")
 
 if(FORMAT=="openvino"):
     model.export(format="openvino")
     model=YOLO(f"{MODELNAME}_openvino_model/")
-
-try:
-    devcount=torch.cuda.device_count()
-    if devcount>0 and DEVICE!="cpu": 
-        device=DEVICE 
-        model.to(device)
-        #print(torch.cuda.get_device_properties(0).major, torch.cuda.get_device_properties(0).minor) 
-        freemem = torch.cuda.mem_get_info()[0]
-        devicename=torch.cuda.get_device_name(device)
-        print(f"running on {devicename}, {freemem/1024/1024:.0f} MB left")
-    else:
-        device="cpu"
-        print(f"running on CPU")
-except Exception as e:
-    device='cpu'
-    print(e)
 
 @app.route("/classes", methods=['POST','GET'])
 def set_classes():

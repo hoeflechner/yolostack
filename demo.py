@@ -31,8 +31,8 @@ def predict(image, classes=[]):
                     )
     return response
 
-print(json.dumps(classes(["sneaker","man"]).json()))
-print(json.dumps(predict("bus.jpg").json(), indent=2))
-print(json.dumps(classes(["red bus","blue bus"]).json()))
+#print(json.dumps(classes(["sneaker","man"]).json()))
+#print(json.dumps(predict("bus.jpg").json(), indent=2))
+#print(json.dumps(classes(["red bus","blue bus","sneaker"]).json()))
 print(json.dumps(predict("bus.jpg").json(), indent=2))
 print(json.dumps(classes().json()))
