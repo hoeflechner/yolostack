@@ -1,12 +1,8 @@
 numpy <1.25,>=1.24
 flask
-#Pillow-SIMD
-#Pillow
-#opencv-python==4.8.0.76
 opencv-python==4.8.0.76
 ultralytics
 git+https://github.com/ultralytics/CLIP.git
-torch
 dill
 waitress
 nob

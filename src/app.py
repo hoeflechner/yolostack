@@ -6,11 +6,12 @@ import torch
 import yaml
 import sys
 from nob import Nob
+import gc
 
 MODELNAME = os.getenv("MODELNAME","yolov8x-worldv2")
 FORMAT = os.getenv("FORMAT","ultralytics")
 DEVICE = os.getenv("DEVICE","cpu")
-HALF = os.getenv("HALF","True")
+HALF = os.getenv("HALF","False")
 WORLD = os.getenv("WORLD","True")
 
 def check_cuda():
@@ -67,20 +68,33 @@ if WORLD=="True" or WORLD=="true" or WORLD=="1" or WORLD=="yes":
     model.set_classes(list(labels))
 
 if FORMAT == "engine":
-    model.to(device)
-    export_path = model.export(
-        format="engine", 
-        device=device, 
-        half=half,       
-        simplify=True, 
-        workspace=4 
-    )
-    model = YOLO(export_path)
+    if os.path.exists(f"{MODELNAME}.engine"):
+        print(f"Loading Engine: {MODELNAME}.engine")
+        model = YOLO(f"{MODELNAME}.engine")
+    else:
+        export_path = model.export(
+            format="engine", 
+            device=device, 
+            half=half,       
+            simplify=True, 
+            workspace=4 
+        )
+        
+        del model
+        gc.collect()
+        torch.cuda.empty_cache()
+        model = YOLO(export_path)
 
-if (FORMAT=="onnx"):
-    model.to(device)
-    model.export(format="onnx") 
-    model=YOLO(f"{MODELNAME}.onnx")
+if (FORMAT == "onnx"):
+    if os.path.exists(f"{MODELNAME}.onnx"):
+        print(f"Loading Engine: {MODELNAME}.onnx")
+        model = YOLO(f"{MODELNAME}.onnx")
+    else:
+        model.export(format="onnx")
+        del model
+        gc.collect()
+        torch.cuda.empty_cache()
+        model=YOLO(f"{MODELNAME}.onnx")
 
 if(FORMAT=="openvino"):
     model.export(format="openvino")

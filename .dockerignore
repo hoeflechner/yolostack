@@ -1,0 +1,15 @@
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+.env
+
+*.engine
+*.onnx
+*.pt
+
+.git/
+.gitignore
+.vscode/
+.idea/
