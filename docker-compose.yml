@@ -2,14 +2,18 @@ version: "3.4"
 
 services:
   yolo:
-    image: yolostack
+    image: ghcr.io/hoeflechner/yolostack:latest
     container_name: yolostack
     restart: unless-stopped
     ports:
-      - "8040:8040"
+      - "4000:4000"
+    volumes:
+      - ./models:/workspace/models
     environment:
       - FORMAT=ultralytics
       - MODELNAME=yolov8x-worldv2
+      - PORT=4000
+      #- QUANTIZE=fp16
     build:
       context: .
       dockerfile: ./Dockerfile

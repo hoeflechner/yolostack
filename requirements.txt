@@ -9,3 +9,4 @@ dill
 waitress
 nob
 onnxruntime-gpu
+tensorrt

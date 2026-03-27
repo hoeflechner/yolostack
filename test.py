@@ -4,7 +4,7 @@ import json
 from PIL import Image
 
 response = requests.post(
-                "http://localhost:5000/predict",
+                "http://localhost:4000/predict",
                 data = {"api_key": "abc"},
                 files={"image": open("bus.jpg", 'rb')},
                 timeout=10,

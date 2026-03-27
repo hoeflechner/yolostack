@@ -60,7 +60,7 @@ and point it to YoloStack:
 ```
 detectors:
   deepstack:
-    api_url: http://yolostack:8040/predict
+    api_url: http://yolostack:4000/predict
     type: deepstack
     api_timeout: 0.1
 ```
@@ -69,6 +69,27 @@ detectors:
 
 Hardware acceleration is recommended with the model. Nvidia-Gpus can be used inside docker: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html 
 The Model will also use quite some vram (2.5-3Gb)
+
+### Reducing VRAM Usage
+
+You can reduce VRAM consumption via the `QUANTIZE` environment variable:
+
+| `FORMAT` | `QUANTIZE` | Effect |
+|---|---|---|
+| `ultralytics` | `fp16` (default) | PyTorch FP16 inference (~50% less VRAM) |
+| `onnx` | `fp16` | ONNX export with FP16 weights |
+| `onnx` | `int8` | ONNX dynamic INT8 quantization (~75% less) |
+| `openvino` | `int8` | OpenVINO INT8 quantization (~75% less) |
+| `tensorrt` | `fp16` | TensorRT FP16 engine (~50% less + faster) |
+| `tensorrt` | `int8` | TensorRT INT8 engine (~75% less + fastest) |
+
+Example:
+
+```
+environment:
+  - FORMAT=tensorrt
+  - QUANTIZE=int8
+```
 
 ## Configuration and standalone Usage
 
@@ -81,6 +102,23 @@ track:
 ```
 
 Note that these labels are not part of the coco dataset. Any label can be used (see [yolo-world](https://docs.ultralytics.com/models/yolo-world/#set-prompts))
+
+### Custom Classes per Request
+
+When using `FORMAT=ultralytics`, you can override the detection classes per request by passing a `classes` parameter. This dynamically generates new CLIP text embeddings for the specified classes.
+
+```bash
+# Comma-separated
+curl -X POST -F "image=@photo.jpg" -F "classes=dog,cat,bird" http://localhost:4000/predict
+
+# JSON array
+curl -X POST -F "image=@photo.jpg" -F 'classes=["dog","cat","bird"]' http://localhost:4000/predict
+
+# As query parameter
+curl -X POST -F "image=@photo.jpg" "http://localhost:4000/predict?classes=dog,cat,bird"
+```
+
+If `classes` is omitted, the default labels from `config.yaml` are used. Note: custom classes only work with the native YOLOWorld model (`FORMAT=ultralytics`), not with exported ONNX/TensorRT/OpenVINO models where classes are baked in at export time.
 
 install dependencies and run:
 
