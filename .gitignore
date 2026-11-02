@@ -6,3 +6,5 @@ models**
 **.cache
 
 .yoloe/
+calib/
+frigate-calib/

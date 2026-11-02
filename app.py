@@ -15,6 +15,7 @@ MODELNAME = os.getenv("MODELNAME","yolov8x-worldv2")
 FORMAT = os.getenv("FORMAT","ultralytics")       # ultralytics, onnx, openvino, tensorrt
 QUANTIZE = os.getenv("QUANTIZE","fp16")           # fp32, fp16, int8
 PORT = int(os.getenv("PORT", 4000))
+CALIB_DIR = os.getenv("CALIB_DIR", "calib")       # images/ here is used for TensorRT INT8 calibration
 half = (QUANTIZE == "fp16")
 
 MODELS_DIR = "models"
@@ -45,13 +46,33 @@ def _free_model():
     import gc
     gc.collect()
 
+def _quantize_arg():
+    """ultralytics replaced the deprecated half=/int8= export kwargs with one quantize= scheme."""
+    return {"quantize": 8} if QUANTIZE == "int8" else {"quantize": 16} if QUANTIZE == "fp16" else {}
+
+def _calib_data():
+    """TensorRT INT8 calibrates on ultralytics' data= dataset, which defaults to coco8 (4 images).
+    Point it at our own camera snapshots; see fetch_calibration_images.py."""
+    images = os.path.join(CALIB_DIR, "images")
+    n = len([f for f in os.listdir(images)
+             if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))]) if os.path.isdir(images) else 0
+    if n < 1:
+        print(f"WARNING: no calibration images in {images} - TensorRT will calibrate on coco8's 4 images. "
+              f"Fill it with ~300 frigate snapshots (fetch_calibration_images.py).")
+        return None
+    print(f"calibration: {n} images from {images}" + ("" if n >= 300 else " - <300 recommended for INT8"))
+    data_yaml = os.path.join(CALIB_DIR, "data.yaml")
+    with open(data_yaml, "w") as f:
+        f.write(f"path: {os.path.abspath(images)}\ntrain: .\nval: .\nnc: 1\nnames: [object]\n")
+    return data_yaml
+
 if FORMAT == "onnx":
     onnx_export_path = f"{MODELNAME}.onnx"
     final_path = os.path.join(MODELS_DIR, f"{MODELNAME}_onnx_{QUANTIZE}.onnx")
     if os.path.exists(final_path):
         print(f"Reusing cached model: {final_path}")
     else:
-        model.export(format="onnx", half=(QUANTIZE == "fp16"))
+        model.export(format="onnx", **({"quantize": 16} if QUANTIZE == "fp16" else {}))
         if QUANTIZE == "int8":
             from onnxruntime.quantization import quantize_dynamic, QuantType
             quantize_dynamic(onnx_export_path, final_path, weight_type=QuantType.QUInt8)
@@ -69,7 +90,7 @@ elif FORMAT == "openvino":
     if os.path.exists(final_path):
         print(f"Reusing cached model: {final_path}")
     else:
-        model.export(format="openvino", int8=(QUANTIZE == "int8"), half=half)
+        model.export(format="openvino", **_quantize_arg())
         shutil.move(f"{MODELNAME}_openvino_model", final_path)
     del model
     _free_model()
@@ -81,7 +102,7 @@ elif FORMAT == "tensorrt":
     if os.path.exists(final_path):
         print(f"Reusing cached model: {final_path}")
     else:
-        model.export(format="engine", half=half, int8=(QUANTIZE == "int8"))
+        model.export(format="engine", **_quantize_arg(), **({"data": _calib_data()} if QUANTIZE == "int8" else {}))
         shutil.move(f"{MODELNAME}.engine", final_path)
     del model
     _free_model()
@@ -122,7 +143,7 @@ def predict():
     with model_lock:
         if req_classes:
             model.set_classes(req_classes)
-        results = model.predict(image, save=False, conf=0.25, half=half, device=device)
+        results = model.predict(image, save=False, conf=0.25, device=device, **({"quantize": 16} if half else {}))
         if req_classes:
             model.set_classes(default_labels)
 
