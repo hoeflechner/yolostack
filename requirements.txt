@@ -10,3 +10,8 @@ waitress
 nob
 onnxruntime-gpu
 tensorrt
+# ultralytics no longer pulls pyyaml, but app.py reads config.yaml with it
+pyyaml
+# engine/onnx export goes through ONNX
+onnx
+onnxslim
