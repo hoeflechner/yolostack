@@ -6,7 +6,7 @@ import time
 import threading
 import os
 import shutil
-from ultralytics import YOLOWorld, YOLO
+from ultralytics import YOLOWorld, YOLOE, YOLO
 import torch
 import yaml
 from nob import Nob
@@ -21,7 +21,8 @@ MODELS_DIR = "models"
 os.makedirs(MODELS_DIR, exist_ok=True)
 
 app = Flask(__name__)
-model = YOLOWorld(f'{MODELNAME}.pt')
+# YOLOE needs its own wrapper: it computes the text embeddings set_classes() requires
+model = (YOLOE if MODELNAME.startswith("yoloe") else YOLOWorld)(f'{MODELNAME}.pt')
 
 device='cpu'
 
