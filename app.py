@@ -13,13 +13,22 @@ import yaml
 from nob import Nob
 
 MODELNAME = os.getenv("MODELNAME","yolov8x-worldv2")
-FORMAT = os.getenv("FORMAT","ultralytics")       # ultralytics, onnx, openvino, tensorrt
-QUANTIZE = os.getenv("QUANTIZE","fp16")           # fp32, fp16, int8
+# "engine" is the spelling the upstream latest image used; accept both instead of silently running the plain .pt
+FORMAT = os.getenv("FORMAT","ultralytics").lower()
+FORMAT = "tensorrt" if FORMAT == "engine" else FORMAT
+if FORMAT not in ("ultralytics", "onnx", "openvino", "tensorrt"):
+    raise SystemExit(f"FORMAT must be ultralytics, onnx, openvino or tensorrt (got '{os.getenv('FORMAT')}')")
+# QUANTIZE is the single precision knob: 8, 16 or nothing (=32); int8/fp16/fp32 are accepted aliases
+QUANTIZE = {"8": 8, "int8": 8, "16": 16, "fp16": 16, "32": 32, "fp32": 32}.get(os.getenv("QUANTIZE", "32").lower())
+if QUANTIZE is None:
+    raise SystemExit(f"QUANTIZE must be 8, 16 or 32 (got '{os.getenv('QUANTIZE')}')")
+if QUANTIZE == 8 and FORMAT == "ultralytics":
+    raise SystemExit("INT8 only exists in exported artifacts - set FORMAT=tensorrt (or onnx/openvino); "
+                     "the plain .pt cannot run INT8")
 PORT = int(os.getenv("PORT", 4000))
 CALIB_DIR = os.getenv("CALIB_DIR", "calib")       # images/ here is used for TensorRT INT8 calibration
-# predict only ever takes quantize=16 (INT8 exists just in exported artifacts) and only for the plain .pt,
-# since an onnx/openvino/engine artifact already carries its own precision
-PREDICT_KWARGS = {} if FORMAT in ("onnx", "openvino", "tensorrt") else ({"quantize": 16} if QUANTIZE == "fp16" else {})
+# predict itself understands quantize=16 only; INT8 is baked into the exported artifact
+PREDICT_KWARGS = {} if FORMAT in ("onnx", "openvino", "tensorrt") else ({"quantize": 16} if QUANTIZE == 16 else {})
 
 MODELS_DIR = "models"
 os.makedirs(MODELS_DIR, exist_ok=True)
@@ -51,7 +60,7 @@ def _free_model():
 
 def _quantize_arg():
     """ultralytics replaced the deprecated half=/int8= export kwargs with one quantize= scheme."""
-    return {"quantize": 8} if QUANTIZE == "int8" else {"quantize": 16} if QUANTIZE == "fp16" else {}
+    return {} if QUANTIZE == 32 else {"quantize": QUANTIZE}
 
 def _calib_data():
     """TensorRT INT8 calibrates on ultralytics' data= dataset, which defaults to coco8 (4 images).
@@ -76,8 +85,8 @@ if FORMAT == "onnx":
     if os.path.exists(final_path):
         print(f"Reusing cached model: {final_path}")
     else:
-        model.export(format="onnx", **({"quantize": 16} if QUANTIZE == "fp16" else {}))
-        if QUANTIZE == "int8":
+        model.export(format="onnx", **({"quantize": 16} if QUANTIZE == 16 else {}))
+        if QUANTIZE == 8:
             from onnxruntime.quantization import quantize_dynamic, QuantType
             quantize_dynamic(onnx_export_path, final_path, weight_type=QuantType.QUInt8)
             os.remove(onnx_export_path)
@@ -104,7 +113,7 @@ elif FORMAT == "tensorrt":
     if os.path.exists(final_path):
         print(f"Reusing cached model: {final_path}")
     else:
-        model.export(format="engine", **_quantize_arg(), **({"data": _calib_data()} if QUANTIZE == "int8" else {}))
+        model.export(format="engine", **_quantize_arg(), **({"data": _calib_data()} if QUANTIZE == 8 else {}))
         shutil.move(f"{MODELNAME}.engine", final_path)
     del model
     _free_model()
