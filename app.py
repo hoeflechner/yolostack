@@ -6,6 +6,7 @@ import time
 import threading
 import os
 import shutil
+import tempfile
 from ultralytics import YOLOWorld, YOLOE, YOLO
 import torch
 import yaml
@@ -61,7 +62,8 @@ def _calib_data():
               f"Fill it with ~300 frigate snapshots (fetch_calibration_images.py).")
         return None
     print(f"calibration: {n} images from {images}" + ("" if n >= 300 else " - <300 recommended for INT8"))
-    data_yaml = os.path.join(CALIB_DIR, "data.yaml")
+    # CALIB_DIR is mounted read-only, so the dataset yaml goes to a writable temp dir; its path: is absolute
+    data_yaml = os.path.join(tempfile.gettempdir(), "yolostack_calib.yaml")
     with open(data_yaml, "w") as f:
         f.write(f"path: {os.path.abspath(images)}\ntrain: .\nval: .\nnc: 1\nnames: [object]\n")
     return data_yaml
