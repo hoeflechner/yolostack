@@ -17,7 +17,7 @@ FORMAT = os.getenv("FORMAT","ultralytics")       # ultralytics, onnx, openvino, 
 QUANTIZE = os.getenv("QUANTIZE","fp16")           # fp32, fp16, int8
 PORT = int(os.getenv("PORT", 4000))
 CALIB_DIR = os.getenv("CALIB_DIR", "calib")       # images/ here is used for TensorRT INT8 calibration
-half = (QUANTIZE == "fp16")
+fp16_predict = (QUANTIZE == "fp16")   # predict in fp16 only for the plain .pt; exported artifacts carry their own precision
 
 MODELS_DIR = "models"
 os.makedirs(MODELS_DIR, exist_ok=True)
@@ -85,7 +85,7 @@ if FORMAT == "onnx":
     del model
     _free_model()
     model = YOLO(final_path)
-    half = False
+    fp16_predict = False
 
 elif FORMAT == "openvino":
     final_path = os.path.join(MODELS_DIR, f"{MODELNAME}_openvino_{QUANTIZE}")
@@ -97,7 +97,7 @@ elif FORMAT == "openvino":
     del model
     _free_model()
     model = YOLO(final_path)
-    half = False
+    fp16_predict = False
 
 elif FORMAT == "tensorrt":
     final_path = os.path.join(MODELS_DIR, f"{MODELNAME}_tensorrt_{QUANTIZE}.engine")
@@ -109,7 +109,7 @@ elif FORMAT == "tensorrt":
     del model
     _free_model()
     model = YOLO(final_path)
-    half = False
+    fp16_predict = False
 
 try:
     devcount=torch.cuda.device_count()
@@ -119,7 +119,7 @@ try:
         freemem = torch.cuda.mem_get_info()[0]
         devicename=torch.cuda.get_device_name(device)
         print(f"running on {devicename}, {freemem/1024/1024:.0f} MB left")
-        print(f"format={FORMAT}, quantize={QUANTIZE}, half={half}")
+        print(f"format={FORMAT}, quantize={QUANTIZE}")
 except Exception as e:
     device='cpu'
     print(e)
@@ -145,7 +145,7 @@ def predict():
     with model_lock:
         if req_classes:
             model.set_classes(req_classes)
-        results = model.predict(image, save=False, conf=0.25, device=device, **({"quantize": 16} if half else {}))
+        results = model.predict(image, save=False, conf=0.25, device=device, **({"quantize": 16} if fp16_predict else {}))
         if req_classes:
             model.set_classes(default_labels)
 
